@@ -43,7 +43,7 @@ const COINS_DATA = [
   },
   {
     id: "bullion-plata-1",
-    name: "Lingote de Plata — Alexander Gold",
+    name: "Lingote de Plata",
     year: 2024,
     period: "bullion",
     ruler: "N/A",
