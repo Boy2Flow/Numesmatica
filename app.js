@@ -34,7 +34,6 @@ class NumismaticaApp {
         this.setupEventListeners();
         this.updateFavBadge();
         this.setupContactForm();
-        this.populateContactSubjects();
 
         // Restore state
         if (this.savedSection) {
@@ -83,9 +82,26 @@ class NumismaticaApp {
             
             this.navigateTo(section);
         });
+
+        // Browser Back/Forward support
+        window.addEventListener('popstate', (e) => {
+            if (e.state) {
+                // Restore filters if needed
+                if (e.state.filters) this.filters = { ...e.state.filters };
+                
+                if (e.state.section === 'coin-detail' && e.state.coinId) {
+                    this.showCoinDetail(e.state.coinId, false);
+                } else if (e.state.section) {
+                    this.navigateTo(e.state.section, false);
+                }
+            } else {
+                // Default to home if no state
+                this.navigateTo('home', false);
+            }
+        });
     }
 
-    navigateTo(sectionId) {
+    navigateTo(sectionId, updateHistory = true) {
         // Update UI
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         const target = document.getElementById(`section-${sectionId}`);
@@ -105,10 +121,25 @@ class NumismaticaApp {
             }
             if (sectionId === 'favorites') this.renderFavorites();
             
+            // Sync breadcrumb link back to catalog if needed
+            if (sectionId === 'coin-detail') {
+                const coinId = localStorage.getItem('numis_current_coin');
+                if (coinId) {
+                    // Si ya estamos en detalle, ya guardamos el coinId
+                }
+            }
+
             // Save state
             localStorage.setItem('numis_current_section', sectionId);
-            if (sectionId !== 'coin-detail') {
-                localStorage.removeItem('numis_current_coin');
+            
+            // Update browser history
+            if (updateHistory) {
+                const state = { 
+                    section: sectionId, 
+                    coinId: localStorage.getItem('numis_current_coin'),
+                    filters: { ...this.filters }
+                };
+                history.pushState(state, '', `#${sectionId}`);
             }
         }
     }
@@ -127,6 +158,7 @@ class NumismaticaApp {
                     <img src="${primaryImg}" 
                          alt="${coin.name}" 
                          loading="lazy" 
+                         draggable="false"
                          data-anverse="${primaryImg}" 
                          data-reverse="${secondaryImg}"
                          onmouseover="this.src=this.dataset.reverse" 
@@ -240,12 +272,12 @@ class NumismaticaApp {
     }
 
     // ──────────────────── DETAIL PAGE ────────────────────
-    showCoinDetail(id) {
+    showCoinDetail(id, updateHistory = true) {
         const coin = COINS_DATA.find(c => c.id === id);
         if (!coin) return;
 
         localStorage.setItem('numis_current_coin', id);
-        this.navigateTo('coin-detail');
+        this.navigateTo('coin-detail', updateHistory);
         
         // Add bullion class to layout if needed
         const detailLayout = document.querySelector('.coin-detail-layout');
@@ -499,23 +531,7 @@ class NumismaticaApp {
         return info ? info.title : this.capitalize(periodId);
     }
 
-    populateContactSubjects() {
-        const select = document.getElementById('contact-subject');
-        if (!select) return;
-        
-        // Remove existing options except the first placeholder
-        while (select.options.length > 1) {
-            select.remove(1);
-        }
-        
-        // Add each coin from the data
-        COINS_DATA.forEach(coin => {
-            const option = document.createElement('option');
-            option.value = coin.name;
-            option.textContent = coin.name;
-            select.appendChild(option);
-        });
-    }
+
 
     setupContactForm() {
         const form = document.getElementById('contact-form');
