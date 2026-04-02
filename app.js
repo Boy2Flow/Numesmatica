@@ -155,18 +155,9 @@ class NumismaticaApp {
         return `
             <div class="coin-card ${isBullion ? 'bullion' : ''}" data-coin-id="${coin.id}">
                 <div class="coin-card-img">
-                    <img src="${primaryImg}" 
-                         alt="${coin.name}" 
-                         loading="lazy" 
-                         draggable="false"
-                         data-anverse="${primaryImg}" 
-                         data-reverse="${secondaryImg}"
-                         onmouseover="this.src=this.dataset.reverse" 
-                         onmouseout="this.src=this.dataset.anverse">
+                    <img src="${primaryImg}" alt="${coin.name}" class="img-anverse" loading="lazy" draggable="false">
+                    <img src="${secondaryImg}" alt="${coin.name}" class="img-reverse" loading="lazy" draggable="false">
                     ${coin.stock === 0 ? '<div class="badge-out-of-stock">Sin Stock</div>' : ''}
-                    <div class="coin-card-overlay">
-                        <button class="btn-view-quick">Ver Detalle</button>
-                    </div>
                 </div>
                 <div class="coin-card-info">
                     <span class="coin-card-period">${this.getSectionTitle(coin.period).toUpperCase()}</span>
