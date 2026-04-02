@@ -73,6 +73,14 @@ class NumismaticaApp {
                 }
             }
             
+            // Handle metal filter from link
+            const metal = link.getAttribute('data-metal');
+            if (metal) {
+                this.filters.metal = metal;
+            } else if (section === 'catalogo') {
+                this.filters.metal = ''; // Reset metal if navigating to catalog without it
+            }
+            
             this.navigateTo(section);
         });
     }
@@ -135,6 +143,7 @@ class NumismaticaApp {
                         <span class="coin-card-year">${coin.year}</span>
                         <span class="coin-card-price">${new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(coin.price)}</span>
                     </div>
+                    ${coin.purity ? `<span class="coin-card-purity">Pureza: ${coin.purity}</span>` : ''}
                 </div>
             </div>
         `;
@@ -183,7 +192,8 @@ class NumismaticaApp {
                 if (coin.period !== 'extranjeras' && !coin.continent) return false;
                 if (this.filters.continent && coin.continent !== this.filters.continent) return false;
             } else if (this.filters.category === 'bullion') {
-                if (coin.material !== 'oro' && coin.period !== 'bullion') return false;
+                if (coin.period !== 'bullion') return false;
+                if (this.filters.metal && coin.metal !== this.filters.metal) return false;
             }
 
             if (this.filters.period && coin.period !== this.filters.period) return false;
@@ -301,6 +311,7 @@ class NumismaticaApp {
             <div class="spec-item"><span class="spec-label">Gobernante</span><span class="spec-value">${coin.ruler}</span></div>
             <div class="spec-item"><span class="spec-label">Ceca</span><span class="spec-value">${coin.mint}</span></div>
             <div class="spec-item"><span class="spec-label">Peso</span><span class="spec-value">${coin.weight}</span></div>
+            ${coin.purity ? `<div class="spec-item"><span class="spec-label">Pureza</span><span class="spec-value">${coin.purity}</span></div>` : ''}
             <div class="spec-item"><span class="spec-label">Estado</span><span class="spec-value">${coin.condition}</span></div>
         `;
 
