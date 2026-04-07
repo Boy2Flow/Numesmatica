@@ -1,6 +1,6 @@
 /**
- * ═══════════════════════════════ ADMIN PANEL LOGIC (PREMIUM EX) ═════════════════ 
- * Improved with Sidebar management, Session persistence, and Image Previews.
+ * ═══════════════════════════════ ADMIN PANEL LOGIC (AUTO-LINK VERSION) ═════════════════ 
+ * Enhanced with IndexedDB handle persistence for easier "fixed" file linkage.
  */
 
 class AdminPanel {
@@ -9,21 +9,24 @@ class AdminPanel {
         this.password = "Alexander2026"; 
         this.addedCoins = JSON.parse(localStorage.getItem('admin_added_coins')) || [];
         this.editingId = null;
+        this.fileHandle = null; 
 
         this.init();
     }
 
-    init() {
+    async init() {
         this.setupTriggers();
         this.setupModals();
         this.setupForm();
         this.renderAddedList();
         this.setupImagePreview();
         this.setupClearSession();
+        
+        // Attempt to restore file handle from previous session
+        await this.restoreFileHandle();
     }
 
     setupTriggers() {
-        // Logo Triple Click
         const logoIcon = document.querySelector('.logo-icon');
         if (logoIcon) {
             logoIcon.addEventListener('click', (e) => {
@@ -31,7 +34,6 @@ class AdminPanel {
             });
         }
 
-        // Invisible Corner Click
         const trigger = document.getElementById('admin-trigger');
         if (trigger) {
             trigger.addEventListener('click', (e) => {
@@ -39,7 +41,6 @@ class AdminPanel {
             });
         }
 
-        // Alt+Shift+A Shortcut
         window.addEventListener('keydown', (e) => {
             if (e.altKey && e.shiftKey && e.code === 'KeyA') {
                 this.showLogin();
@@ -59,10 +60,113 @@ class AdminPanel {
             if (e.key === 'Enter') this.handleLogin();
         };
 
-        // Export data.js
-        document.getElementById('btn-export-db').onclick = () => this.exportDatabase();
+        const btnExport = document.getElementById('btn-export-db');
+        btnExport.innerHTML = '<span>🔗</span> Vincular data.json';
+        btnExport.onclick = () => this.linkFile();
     }
 
+    async restoreFileHandle() {
+        try {
+            // Check if we have a saved handle in IndexedDB
+            const handle = await this.getHandleFromIDB();
+            if (handle) {
+                // Check if we still have permission
+                if (await handle.queryPermission({ mode: 'readwrite' }) === 'granted') {
+                    this.setFileHandle(handle);
+                } else {
+                    // We have the handle but need to re-ask for permission
+                    const btnExport = document.getElementById('btn-export-db');
+                    btnExport.innerHTML = '<span>🗝️</span> Reactivar data.json';
+                    btnExport.onclick = async () => {
+                        if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted') {
+                            this.setFileHandle(handle);
+                        }
+                    };
+                }
+            }
+        } catch (err) {
+            console.warn('Could not restore file handle:', err);
+        }
+    }
+
+    setFileHandle(handle) {
+        this.fileHandle = handle;
+        const btnExport = document.getElementById('btn-export-db');
+        btnExport.innerHTML = '<span>💾</span> Guardar en data.json';
+        btnExport.style.background = 'rgba(76, 175, 80, 0.2)';
+        btnExport.style.borderColor = '#4CAF50';
+        btnExport.onclick = () => this.saveToFile();
+        this.app.showToast('✅ data.json vinculado y listo');
+    }
+
+    async linkFile() {
+        try {
+            [this.fileHandle] = await window.showOpenFilePicker({
+                types: [{
+                    description: 'Archivo de datos JSON',
+                    accept: { 'application/json': ['.json'] },
+                }],
+            });
+            
+            // Save handle to IndexedDB for next time
+            await this.saveHandleToIDB(this.fileHandle);
+            this.setFileHandle(this.fileHandle);
+        } catch (err) {
+            console.error('Error selecting file:', err);
+        }
+    }
+
+    async saveToFile() {
+        if (!this.fileHandle) {
+            this.linkFile();
+            return;
+        }
+
+        try {
+            const writable = await this.fileHandle.createWritable();
+            const fullData = {
+                coins: window.COINS_DATA,
+                periods: window.PERIODS_INFO
+            };
+            await writable.write(JSON.stringify(fullData, null, 2));
+            await writable.close();
+            this.app.showToast('📁 Cambios guardados físicamente en data.json');
+        } catch (err) {
+            this.app.showToast('❌ Error al escribir en el archivo');
+            console.error(err);
+        }
+    }
+
+    // --- IndexedDB Helpers ---
+    async saveHandleToIDB(handle) {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('AdminDB', 1);
+            request.onupgradeneeded = () => request.result.createObjectStore('handles');
+            request.onsuccess = () => {
+                const db = request.result;
+                const tx = db.transaction('handles', 'readwrite');
+                tx.objectStore('handles').put(handle, 'data_json');
+                tx.oncomplete = () => resolve();
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getHandleFromIDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('AdminDB', 1);
+            request.onupgradeneeded = () => request.result.createObjectStore('handles');
+            request.onsuccess = () => {
+                const db = request.result;
+                const tx = db.transaction('handles', 'readonly');
+                const getReq = tx.objectStore('handles').get('data_json');
+                getReq.onsuccess = () => resolve(getReq.result);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // --- Rest of the logic ---
     showLogin() {
         document.getElementById('login-overlay').classList.add('active');
         document.getElementById('admin-password').focus();
@@ -87,9 +191,9 @@ class AdminPanel {
         const btnGenCode = document.getElementById('btn-gen-code');
         const codeOutput = document.getElementById('code-output');
 
-        form.onsubmit = (e) => {
+        form.onsubmit = async (e) => {
             e.preventDefault();
-            this.saveCoin();
+            await this.saveCoin();
         };
 
         btnGenCode.onclick = () => {
@@ -129,7 +233,7 @@ class AdminPanel {
         };
     }
 
-    saveCoin() {
+    async saveCoin() {
         const coin = this.getFormData();
         
         if (this.editingId) {
@@ -146,8 +250,14 @@ class AdminPanel {
         }
 
         localStorage.setItem('admin_added_coins', JSON.stringify(this.addedCoins));
-        this.app.showToast('✅ Producto guardado localmente');
+        this.app.showToast('✅ Guardado en memoria');
         
+        if (this.fileHandle) {
+            await this.saveToFile();
+        } else {
+            this.app.showToast('💡 Vincula el archivo para guardar permanentemente');
+        }
+
         document.getElementById('admin-coin-form').reset();
         document.getElementById('code-output').style.display = 'none';
         document.getElementById('a-preview-img').style.display = 'none';
@@ -161,7 +271,7 @@ class AdminPanel {
         if (!list) return;
 
         if (this.addedCoins.length === 0) {
-            list.innerHTML = '<p style="color: #444; font-size: 0.8rem; text-align: center; margin-top: 20px;">No hay monedas nuevas en esta sesión local.</p>';
+            list.innerHTML = '<p style="color: #444; font-size: 0.8rem; text-align: center; margin-top: 20px;">Sesión local vacía.</p>';
             return;
         }
 
@@ -206,19 +316,14 @@ class AdminPanel {
         document.getElementById('a-description').value = coin.description;
 
         this.updatePreview(coin.images[0]);
-        this.app.showToast('Cargando: ' + coin.name);
     }
 
     deleteCoin(id) {
-        if (!confirm('¿Eliminar esta moneda del historial local?')) return;
-        
+        if (!confirm('¿Eliminar esta moneda local?')) return;
         this.addedCoins = this.addedCoins.filter(c => c.id !== id);
         window.COINS_DATA = window.COINS_DATA.filter(c => c.id !== id);
-        
         localStorage.setItem('admin_added_coins', JSON.stringify(this.addedCoins));
         this.renderAddedList();
-        this.app.showToast('Moneda eliminada localmente');
-        
         if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
     }
 
@@ -243,44 +348,15 @@ class AdminPanel {
     setupClearSession() {
         const btn = document.getElementById('btn-clear-admin');
         btn.onclick = () => {
-            if (confirm('¿Deseas vaciar todas las monedas añadidas localmente? Esta acción no se puede deshacer.')) {
-                // Remove each added coin from COINS_DATA
+            if (confirm('¿Vaciar sesión local?')) {
                 this.addedCoins.forEach(coin => {
                     window.COINS_DATA = window.COINS_DATA.filter(c => c.id !== coin.id);
                 });
                 this.addedCoins = [];
                 localStorage.removeItem('admin_added_coins');
                 this.renderAddedList();
-                this.app.showToast('Sesión local vaciada');
                 if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
             }
         };
-    }
-
-    exportDatabase() {
-        const fullData = JSON.stringify(window.COINS_DATA, null, 2);
-        const periodsInfo = JSON.stringify(window.PERIODS_INFO, null, 2);
-        
-        const content = `/** 
- * Numismática Alexander - Banco de Datos 
- * Este archivo ha sido generado automáticamente desde el Panel de Administración.
- */
-
-let COINS_DATA = ${fullData};
-
-const PERIODS_INFO = ${periodsInfo};
-`;
-        
-        const blob = new Blob([content], { type: 'text/javascript' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'data.js';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        this.app.showToast('✅ Descargando archivo "data.js" actualizado');
     }
 }

@@ -2,9 +2,9 @@
  * ═══════════════════════════════ CORE LOGIC ═══════════════════════════════ 
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     window.app = new NumismaticaApp();
-    window.app.init();
+    await window.app.init();
     
     // Initialize Admin Panel
     if (typeof AdminPanel !== 'undefined') {
@@ -33,19 +33,34 @@ class NumismaticaApp {
         this.savedSection = localStorage.getItem('numis_current_section');
         this.savedCoinId = localStorage.getItem('numis_current_coin');
 
+    }
+
+    async init() {
+        // Load data from JSON
+        try {
+            const response = await fetch('data.json');
+            const data = await response.json();
+            window.COINS_DATA = data.coins;
+            window.PERIODS_INFO = data.periods;
+        } catch (error) {
+            console.error('Error loading data.json:', error);
+            // Fallback to data.js if already loaded via script tag
+            if (typeof COINS_DATA === 'undefined') {
+                window.COINS_DATA = [];
+                window.PERIODS_INFO = {};
+            }
+        }
+
         // Load Admin Added Coins from LocalStorage into Global Data
         const addedCoins = JSON.parse(localStorage.getItem('admin_added_coins')) || [];
         if (addedCoins.length > 0) {
-            // Note: This logic is also in AdminPanel, but we ensure it here too for the catalog
             addedCoins.forEach(coin => {
                 if (!COINS_DATA.find(c => c.id === coin.id)) {
                     COINS_DATA.push(coin);
                 }
             });
         }
-    }
 
-    init() {
         this.setupNavigation();
         this.setupEventListeners();
         this.updateFavBadge();
