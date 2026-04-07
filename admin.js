@@ -71,20 +71,43 @@ class AdminPanel {
         this.app.showToast('🚀 Iniciando migración...');
         let count = 0;
         
-        // We assume COINS_DATA contains the initial hardcoded coins
         for (const coin of window.COINS_DATA) {
             try {
+                // Ensure the coin object matches the DB structure exactly
                 const { error } = await window.supabase
                     .from('coins')
-                    .upsert(coin);
+                    .upsert({
+                        id: coin.id,
+                        name: coin.name,
+                        year: coin.year,
+                        period: coin.period,
+                        ruler: coin.ruler || 'N/A',
+                        country: coin.country || 'España',
+                        mint: coin.mint || 'Madrid',
+                        weight: coin.weight || '0g',
+                        purity: coin.purity || '',
+                        metal: coin.metal || '',
+                        condition: coin.condition || '',
+                        price: coin.price || 0,
+                        images: coin.images,
+                        description: coin.description || '',
+                        history: coin.history || '',
+                        variants: coin.variants || '',
+                        market: coin.market || '',
+                        featured: coin.featured || false,
+                        views: coin.views || 0,
+                        stock: coin.stock || 1
+                    });
                 if (!error) count++;
+                else console.error('Error upserting coin:', error);
             } catch (err) {
                 console.error('Error migrando individual:', err);
             }
         }
         
-        this.app.showToast(`✅ Migración completada: ${count} monedas sincronizadas.`);
+        this.app.showToast(`✅ Sincronización completa: ${count} monedas.`);
         this.renderAddedList();
+        if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
     }
 
     showLogin() {
