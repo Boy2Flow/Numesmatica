@@ -577,53 +577,142 @@ option {
   border-color: var(--primary);
 }
 
+/* ═══════════════════════════════ PREMIUM CATALOG CARDS ═══════════════════════════ */
 .coins-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 40px;
+  justify-content: center;
+  padding: 40px 0;
 }
 
 .coin-card {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  transition: var(--transition);
+  background: transparent; /* Sin fondo para que la moneda destaque */
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  padding: 20px;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  border-radius: 4px;
 }
 
-.coin-card:hover {
-  transform: translateY(-10px);
-  border-color: var(--primary);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-}
-
-.coin-card-img {
+.coin-card-img-wrapper {
   width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
+  height: 300px;
   position: relative;
+  overflow: hidden;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.coin-card-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
+.coin-card-img-wrapper img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
   position: absolute;
-  top: 0;
-  left: 0;
+  transition: all 0.6s ease;
+  pointer-events: none;
 }
 
 .img-reverse {
   opacity: 0;
+  transform: rotateY(180deg) scale(0.8);
+}
+
+.coin-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.15);
+  transform: translateY(-5px);
 }
 
 .coin-card:hover .img-anverse {
   opacity: 0;
+  transform: rotateY(-180deg) scale(0.8);
 }
 
 .coin-card:hover .img-reverse {
   opacity: 1;
+  transform: rotateY(0) scale(1);
+}
+
+.coin-card-content {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.coin-card-title {
+  font-family: 'Playfair Display', serif;
+  color: var(--white);
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+/* ═══════════════════════════════ DETALLE DE MONEDA (TOTAL FREEDOM) ═══════════════════════════ */
+.magnifier-container {
+  width: 100%;
+  max-width: 500px;
+  min-height: 500px; /* Un mínimo para que la página sea estable */
+  height: auto; /* ¡Aquí está la clave! Que crezca lo necesario */
+  margin: 0 auto;
+  position: relative;
+  cursor: zoom-in;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.05);
+  padding: 20px; /* Aire a los lados */
+}
+
+.gallery-main-img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 70vh; /* Para que no se salga de la pantalla del portátil */
+  object-fit: contain;
+  filter: drop-shadow(0 20px 50px rgba(0,0,0,0.8));
+}
+
+.gallery-main-img {
+  max-width: 95%;
+  max-height: 95%; /* Forzamos que se mantenga dentro del pedestal */
+  object-fit: contain;
+  filter: drop-shadow(0 15px 40px rgba(0,0,0,0.8));
+}
+
+#magnifier-lens {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border: 2px solid var(--primary);
+  background: rgba(255, 255, 255, 0.1);
+  display: none;
+  pointer-events: none;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+#magnifier-result {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  display: none;
+  pointer-events: none;
+  z-index: 5; /* Por encima de la imagen base pero debajo de la lente */
+  background-color: var(--black);
+}
+
+.coin-card-content {
+  padding: 25px;
+  border-top: 1px solid var(--glass-border);
 }
 
 .coin-card:hover .coin-card-img img {

@@ -1,6 +1,5 @@
 /**
- * ═══════════════════════════════ ADMIN PANEL LOGIC (SUPABASE CLOUD) ═════════════════ 
- * Fully automated cloud database integration for GitHub Pages hosting.
+ * ═══════════════════════════════ ADMIN PANEL (SOLID VERSION - NO DEPENDENCIES) ═════════════════ 
  */
 
 class AdminPanel {
@@ -8,7 +7,6 @@ class AdminPanel {
         this.app = appInstance;
         this.password = "Alexander2026"; 
         this.editingId = null;
-
         this.init();
     }
 
@@ -21,280 +19,174 @@ class AdminPanel {
     }
 
     setupTriggers() {
-        const logoIcon = document.querySelector('.logo-icon');
-        if (logoIcon) {
-            logoIcon.addEventListener('click', (e) => {
-                if (e.detail === 3) this.showLogin();
-            });
-        }
-
+        const logo = document.querySelector('.logo-icon');
+        if (logo) logo.onclick = (e) => { if (e.detail === 3) this.showLogin(); };
         const trigger = document.getElementById('admin-trigger');
-        if (trigger) {
-            trigger.addEventListener('click', (e) => {
-                if (e.detail === 3) this.showLogin();
-            });
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.altKey && e.shiftKey && e.code === 'KeyA') {
-                this.showLogin();
-            }
-        });
+        if (trigger) trigger.onclick = (e) => { if (e.detail === 3) this.showLogin(); };
+        window.onkeydown = (e) => { if (e.altKey && e.shiftKey && e.code === 'KeyA') this.showLogin(); };
     }
 
     setupModals() {
-        const loginOverlay = document.getElementById('login-overlay');
-        const adminOverlay = document.getElementById('admin-panel-overlay');
-        
-        document.getElementById('login-close').onclick = () => loginOverlay.classList.remove('active');
-        document.getElementById('admin-panel-close').onclick = () => adminOverlay.classList.remove('active');
-
-        document.getElementById('btn-login-exec').onclick = () => this.handleLogin();
-        document.getElementById('admin-password').onkeydown = (e) => {
-            if (e.key === 'Enter') this.handleLogin();
-        };
-
-        // Migration/Setup button
-        const btnSync = document.getElementById('btn-export-db');
-        btnSync.innerHTML = '<span>☁️</span> Migrar Datos a la Nube';
-        btnSync.onclick = () => this.migrateData();
-
-        // Clear local button
-        document.getElementById('btn-clear-admin').onclick = () => {
-            this.app.showToast('ℹ️ El historial ahora reside en Supabase Cloud');
-        };
+        if (document.getElementById('login-close')) document.getElementById('login-close').onclick = () => document.getElementById('login-overlay').classList.remove('active');
+        if (document.getElementById('admin-panel-close')) document.getElementById('admin-panel-close').onclick = () => document.getElementById('admin-panel-overlay').classList.remove('active');
+        if (document.getElementById('btn-login-exec')) document.getElementById('btn-login-exec').onclick = () => this.handleLogin();
+        if (document.getElementById('btn-export-db')) document.getElementById('btn-export-db').onclick = () => this.forceMigrate();
     }
 
-    async migrateData() {
-        if (!confirm('¿Deseas subir todas las monedas actuales de data.js a Supabase? (Solo se subirán las que no existan)')) return;
+    async forceMigrate() {
+        if (!window.supabase) { alert('Conectando a la nube...'); return; }
+        const data = window.COINS_DATA;
+        if (!data || data.length === 0) { alert('No hay datos en data.js'); return; }
+        if (!confirm(`¿Subir ${data.length} monedas?`)) return;
 
-        this.app.showToast('🚀 Iniciando migración...');
-        let count = 0;
-        
-        for (const coin of window.COINS_DATA) {
+        for (const c of data) {
             try {
-                // Ensure the coin object matches the DB structure exactly
-                const { error } = await window.supabase
-                    .from('coins')
-                    .upsert({
-                        id: coin.id,
-                        name: coin.name,
-                        year: coin.year,
-                        period: coin.period,
-                        ruler: coin.ruler || 'N/A',
-                        country: coin.country || 'España',
-                        mint: coin.mint || 'Madrid',
-                        weight: coin.weight || '0g',
-                        purity: coin.purity || '',
-                        metal: coin.metal || '',
-                        condition: coin.condition || '',
-                        price: coin.price || 0,
-                        images: coin.images,
-                        description: coin.description || '',
-                        history: coin.history || '',
-                        variants: coin.variants || '',
-                        market: coin.market || '',
-                        featured: coin.featured || false,
-                        views: coin.views || 0,
-                        stock: coin.stock || 1
-                    });
-                if (!error) count++;
-                else console.error('Error upserting coin:', error);
-            } catch (err) {
-                console.error('Error migrando individual:', err);
-            }
+                await window.supabase.from('coins').upsert({
+                    id: c.id, name: c.name, year: c.year, period: c.period,
+                    ruler: c.ruler || 'N/A', continent: c.continent || null, 
+                    metal: c.metal || null, price: c.price || 0,
+                    images: c.images || [], description: c.description || ''
+                });
+            } catch (e) { console.error(e); }
         }
-        
-        this.app.showToast(`✅ Sincronización completa: ${count} monedas.`);
+        alert('📦 Todas las monedas se han sincronizado con la nube.');
         this.renderAddedList();
-        if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
-    }
-
-    showLogin() {
-        document.getElementById('login-overlay').classList.add('active');
-        document.getElementById('admin-password').focus();
     }
 
     handleLogin() {
-        const passInput = document.getElementById('admin-password');
-        if (passInput.value === this.password) {
+        const p = document.getElementById('admin-password');
+        if (p && p.value === this.password) {
             document.getElementById('login-overlay').classList.remove('active');
             document.getElementById('admin-panel-overlay').classList.add('active');
-            passInput.value = '';
+            p.value = '';
             this.renderAddedList();
-        } else {
-            this.app.showToast('Acceso denegado');
-            passInput.style.borderColor = '#ff4757';
-            setTimeout(() => passInput.style.borderColor = '', 1000);
-        }
+        } else { alert('Contraseña incorrecta'); }
     }
 
     setupForm() {
         const form = document.getElementById('admin-coin-form');
-        const btnGenCode = document.getElementById('btn-gen-code');
-        const codeOutput = document.getElementById('code-output');
+        if (!form) return;
 
         form.onsubmit = async (e) => {
             e.preventDefault();
             await this.saveCoinToCloud();
         };
 
-        btnGenCode.onclick = () => {
-            const coin = this.getFormData();
-            const code = JSON.stringify(coin, null, 2);
-            codeOutput.textContent = code;
-            codeOutput.style.display = 'block';
-        };
+        const btnGen = document.getElementById('btn-gen-code');
+        if (btnGen) {
+            btnGen.onclick = () => {
+                const json = JSON.stringify(this.getFormData(), null, 2);
+                document.getElementById('code-output').textContent = json;
+            };
+        }
     }
 
     getFormData() {
-        const imgInput = document.getElementById('a-images').value;
-        const images = imgInput.split(',').map(s => s.trim()).filter(s => s !== '');
+        const getVal = (id) => { const el = document.getElementById(id); return el ? el.value : null; };
+        const imagesRaw = getVal('a-images') || "";
+        const images = imagesRaw.split(',').map(s => s.trim()).filter(s => s !== '');
         
         return {
             id: this.editingId || `moneda-${Date.now()}`,
-            name: document.getElementById('a-name').value,
-            year: parseInt(document.getElementById('a-year').value),
-            period: document.getElementById('a-period').value,
-            ruler: document.getElementById('a-ruler').value || 'N/A',
-            country: "España",
-            mint: document.getElementById('a-mint').value || 'Madrid',
-            weight: document.getElementById('a-weight').value || '0g',
-            purity: document.getElementById('a-purity').value || '',
-            metal: document.getElementById('a-metal').value,
-            condition: document.getElementById('a-condition').value,
-            price: parseFloat(document.getElementById('a-price').value),
+            name: getVal('a-name'),
+            year: parseInt(getVal('a-year')) || 0,
+            period: getVal('a-period'),
+            ruler: getVal('a-ruler') || 'N/A',
+            continent: getVal('a-continent') || null,
+            metal: getVal('a-metal') || null,
+            purity: getVal('a-purity') || '',
+            weight: getVal('a-weight') || '',
+            mint: getVal('a-mint') || '',
+            condition: getVal('a-condition') || 'EBC',
+            price: parseFloat(getVal('a-price')) || 0,
             images: images,
-            description: document.getElementById('a-description').value,
-            history: "Pieza catalogada en Alexander Cloud.",
-            featured: document.getElementById('a-period').value === 'bullion',
+            description: getVal('a-description') || '',
             stock: 1
         };
     }
 
     async saveCoinToCloud() {
+        if (!window.supabase) { alert('No hay conexión con Supabase'); return; }
         const coin = this.getFormData();
-        this.app.showToast('⏳ Guardando en la nube...');
 
         try {
-            const { error } = await window.supabase
-                .from('coins')
-                .upsert(coin);
-
+            const { error } = await window.supabase.from('coins').upsert(coin);
             if (error) throw error;
 
-            this.app.showToast('✨ ¡Moneda publicada con éxito!');
-            
-            // Refresh local data
-            const index = window.COINS_DATA.findIndex(c => c.id === coin.id);
-            if (index !== -1) window.COINS_DATA[index] = coin;
-            else window.COINS_DATA.push(coin);
-
+            alert('✨ Moneda guardada con éxito en la nube.');
             this.editingId = null;
             document.getElementById('admin-coin-form').reset();
-            document.getElementById('a-preview-img').style.display = 'none';
+            if (document.getElementById('a-preview-img')) document.getElementById('a-preview-img').style.display = 'none';
             this.renderAddedList();
-            
-            if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
-        } catch (err) {
-            console.error('Error guardando en Supabase:', err);
-            this.app.showToast('❌ Error al guardar en la nube');
+            if (this.app && this.app.renderCatalog) this.app.renderCatalog();
+        } catch (e) {
+            console.error(e);
+            alert('Error al guardar: ' + (e.message || 'Error técnico'));
         }
     }
 
     async renderAddedList() {
         const list = document.getElementById('admin-items-list');
-        if (!list) return;
-
-        // Fetch all from cloud for the list
+        if (!list || !window.supabase) return;
         try {
-            const { data: coins } = await window.supabase.from('coins').select('*').order('created_at', { ascending: false });
-            
-            if (!coins || coins.length === 0) {
-                list.innerHTML = '<p style="color: #444; font-size: 0.8rem; text-align: center; margin-top: 20px;">Nube vacía. Pulsa migrar para empezar.</p>';
-                return;
-            }
-
-            list.innerHTML = coins.map(coin => `
-                <div class="added-item-card" data-id="${coin.id}">
-                    <img src="${coin.images[0] || 'https://via.placeholder.com/50'}" class="added-item-img">
-                    <div class="added-item-info">
-                        <h4>${coin.name}</h4>
-                        <p>${coin.year} • ${coin.price}€</p>
-                    </div>
-                    <button class="delete-item" title="Eliminar">×</button>
+            const { data } = await window.supabase.from('coins').select('*').order('created_at', { ascending: false });
+            list.innerHTML = (data || []).map(c => `
+                <div class="added-item-card" data-id="${c.id}">
+                    <img src="${c.images?.[0] || ''}" class="added-item-img">
+                    <div class="added-item-info"><h4>${c.name}</h4><p>${c.year} • ${c.price}€</p></div>
+                    <button class="delete-item">×</button>
                 </div>
             `).join('');
-
             list.querySelectorAll('.added-item-card').forEach(card => {
                 card.onclick = (e) => {
-                    if (e.target.classList.contains('delete-item')) {
-                        this.deleteCoinFromCloud(card.dataset.id);
-                        return;
-                    }
-                    this.loadCoinToFormFromData(coins.find(c => c.id === card.dataset.id));
+                    if (e.target.classList.contains('delete-item')) this.deleteCoinFromCloud(card.dataset.id);
+                    else this.loadCoinToFormFromData(data.find(coin => coin.id === card.dataset.id));
                 };
             });
-        } catch (err) {
-            list.innerHTML = '<p style="color: grey;">Error conectando a la nube.</p>';
-        }
+        } catch (e) { console.error(e); }
     }
 
-    loadCoinToFormFromData(coin) {
-        if (!coin) return;
-
-        this.editingId = coin.id;
-        document.getElementById('a-name').value = coin.name;
-        document.getElementById('a-year').value = coin.year;
-        document.getElementById('a-period').value = coin.period;
-        document.getElementById('a-ruler').value = coin.ruler;
-        document.getElementById('a-metal').value = coin.metal;
-        document.getElementById('a-purity').value = coin.purity;
-        document.getElementById('a-weight').value = coin.weight;
-        document.getElementById('a-mint').value = coin.mint;
-        document.getElementById('a-condition').value = coin.condition;
-        document.getElementById('a-price').value = coin.price;
-        document.getElementById('a-images').value = coin.images.join(', ');
-        document.getElementById('a-description').value = coin.description;
-
-        this.updatePreview(coin.images[0]);
+    loadCoinToFormFromData(c) {
+        if (!c) return;
+        this.editingId = c.id;
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        setVal('a-name', c.name);
+        setVal('a-year', c.year);
+        setVal('a-period', c.period);
+        setVal('a-ruler', c.ruler);
+        setVal('a-continent', c.continent);
+        setVal('a-metal', c.metal);
+        setVal('a-purity', c.purity);
+        setVal('a-weight', c.weight);
+        setVal('a-mint', c.mint);
+        setVal('a-condition', c.condition);
+        setVal('a-price', c.price);
+        setVal('a-description', c.description);
+        setVal('a-images', c.images ? c.images.join(', ') : '');
+        this.updatePreview(c.images?.[0]);
     }
 
     async deleteCoinFromCloud(id) {
-        if (!confirm('¿Eliminar esta moneda permanentemente de la nube?')) return;
-        
+        if (!confirm('¿Eliminar pieza de la nube?')) return;
         try {
-            const { error } = await window.supabase
-                .from('coins')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-            
-            window.COINS_DATA = window.COINS_DATA.filter(c => c.id !== id);
+            await window.supabase.from('coins').delete().eq('id', id);
             this.renderAddedList();
-            this.app.showToast('✅ Eliminada de la nube');
-            if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
-        } catch (err) {
-            this.app.showToast('❌ Error al eliminar');
-        }
+            if (this.app && this.app.renderCatalog) this.app.renderCatalog();
+        } catch (e) { alert('Error al borrar'); }
     }
 
     setupImagePreview() {
-        const imgInput = document.getElementById('a-images');
-        imgInput.addEventListener('input', () => {
-            const firstImg = imgInput.value.split(',')[0].trim();
-            this.updatePreview(firstImg);
-        });
+        const inp = document.getElementById('a-images');
+        if (inp) inp.oninput = () => {
+            const first = inp.value.split(',')[0].trim();
+            this.updatePreview(first);
+        };
     }
 
     updatePreview(url) {
-        const preview = document.getElementById('a-preview-img');
-        if (url) {
-            preview.src = url;
-            preview.style.display = 'block';
-        } else {
-            preview.style.display = 'none';
-        }
+        const p = document.getElementById('a-preview-img');
+        if (p) { if (url) { p.src = url; p.style.display = 'block'; } else { p.style.display = 'none'; } }
     }
+
+    showLogin() { if (document.getElementById('login-overlay')) document.getElementById('login-overlay').classList.add('active'); }
 }
