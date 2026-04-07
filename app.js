@@ -3,8 +3,13 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new NumismaticaApp();
-    app.init();
+    window.app = new NumismaticaApp();
+    window.app.init();
+    
+    // Initialize Admin Panel
+    if (typeof AdminPanel !== 'undefined') {
+        window.adminPanel = new AdminPanel(window.app);
+    }
 });
 
 class NumismaticaApp {
@@ -27,6 +32,17 @@ class NumismaticaApp {
         // State persistence
         this.savedSection = localStorage.getItem('numis_current_section');
         this.savedCoinId = localStorage.getItem('numis_current_coin');
+
+        // Load Admin Added Coins from LocalStorage into Global Data
+        const addedCoins = JSON.parse(localStorage.getItem('admin_added_coins')) || [];
+        if (addedCoins.length > 0) {
+            // Note: This logic is also in AdminPanel, but we ensure it here too for the catalog
+            addedCoins.forEach(coin => {
+                if (!COINS_DATA.find(c => c.id === coin.id)) {
+                    COINS_DATA.push(coin);
+                }
+            });
+        }
     }
 
     init() {

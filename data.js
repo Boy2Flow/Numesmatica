@@ -1,4 +1,4 @@
-const COINS_DATA = [
+let COINS_DATA = [
   {
     id: "moneda-1-habsburgo",
     name: "8 Escudos — Carlos II 'Hechizado'",
@@ -43,7 +43,7 @@ const COINS_DATA = [
   },
   {
     id: "bullion-plata-1",
-    name: "Lingote de Plata",
+    name: "Lingote de Plata — Alexander Gold",
     year: 2024,
     period: "bullion",
     ruler: "N/A",
@@ -101,6 +101,26 @@ const COINS_DATA = [
     featured: true,
     views: 320,
     stock: 1
+  },
+  {
+    id: "moneda-8-elizabeth-20fr",
+    name: "20 Francos — Elizabeth II",
+    year: 1896,
+    period: "bullion",
+    ruler: "Elizabeth II",
+    country: "Reino Unido",
+    mint: "Londres",
+    weight: "6.45g",
+    purity: "900",
+    metal: "oro",
+    condition: "SC",
+    price: 450,
+    images: ["Imagenes/20 francos elisabert/1.png", "Imagenes/20 francos elisabert/2.png"],
+    description: "Edición conmemorativa de 20 francos con la efigie de Elizabeth II. Una pieza de oro de inversión que sigue los estándares de la Unión Monetaria Latina.",
+    history: "Esta pieza representa una emisión especial que mantiene el peso y ley tradicionales de los 20 francos (Napoleones), pero con la efigie de la monarca británica, siendo muy apreciada por inversores en oro físico.",
+    featured: true,
+    views: 180,
+    stock: 2
   }
 ];
 

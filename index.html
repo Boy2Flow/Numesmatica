@@ -350,6 +350,140 @@
     </div>
   </footer>
 
+  <!-- ═══════════════════════════════ ADMIN LOGIN MODAL ═══════════════════════════ -->
+  <div class="admin-overlay" id="login-overlay">
+    <div class="admin-modal login-modal">
+      <div class="admin-close" id="login-close">✕</div>
+      <div class="login-icon">⚜</div>
+      <h2 class="admin-title" style="text-align: center; border-bottom: none;">Acceso <span class="gold-text">Alexander</span></h2>
+      <div class="admin-form-group">
+        <label>Contraseña Maestra</label>
+        <input type="password" id="admin-password" class="admin-input" placeholder="••••••••" />
+      </div>
+      <button class="btn-login" id="btn-login-exec">Autenticar Panel</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ ADMIN PANEL MODAL (RESTRUCTURED) ════════════════ -->
+  <div class="admin-overlay" id="admin-panel-overlay">
+    <div class="admin-modal">
+      <div class="admin-close" id="admin-panel-close">✕</div>
+      
+      <!-- Listado lateral -->
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar-title">
+          <span>📦</span> SESIÓN ACTUAL
+        </div>
+        <div class="added-items-list" id="admin-items-list">
+          <!-- Monedas añadidas aparecerán aquí -->
+        </div>
+        <button class="btn-admin code" id="btn-export-db" style="width: 100%; border-style: dashed;">
+          <span>📥</span> Exportar data.js
+        </button>
+        <button class="btn-admin" id="btn-clear-admin" style="width: 100%; margin-top: 10px; color: #ff4757; font-size: 0.7rem; border: none; opacity: 0.5;">
+          🗑️ Borrar Sesión Local
+        </button>
+      </aside>
+
+      <!-- Panel principal de edición -->
+      <main class="admin-main">
+        <h2 class="admin-title">Gestión de <span class="gold-text">Catálogo</span></h2>
+        
+        <form id="admin-coin-form">
+          <div class="form-section-title">Información Básica</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label>Nombre de la Pieza</label>
+              <input type="text" id="a-name" class="admin-input" placeholder="Ej: 8 Escudos Carlos III" required />
+            </div>
+            <div class="admin-form-group">
+              <label>Año de Acuñación</label>
+              <input type="number" id="a-year" class="admin-input" placeholder="1788" required />
+            </div>
+            <div class="admin-form-group">
+              <label>Periodo Histórico</label>
+              <select id="a-period" class="admin-select" required>
+                <option value="reyes-catolicos">Reyes Católicos</option>
+                <option value="austrias">Austrias</option>
+                <option value="borbones" selected>Borbones</option>
+                <option value="republica">República / Centenario</option>
+                <option value="extranjeras">Monedas Extranjeras</option>
+                <option value="bullion">Bullion (Metales de Inversión)</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label>Gobernante / Personaje</label>
+              <input type="text" id="a-ruler" class="admin-input" placeholder="Carlos III" />
+            </div>
+          </div>
+
+          <div class="form-section-title">Especificaciones Técnicas</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label>Metal / Material</label>
+              <select id="a-metal" class="admin-select">
+                <option value="oro">Oro</option>
+                <option value="plata">Plata</option>
+                <option value="cobre">Cobre</option>
+                <option value="bronce">Bronce</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label>Pureza / Ley</label>
+              <input type="text" id="a-purity" class="admin-input" placeholder=".900 / 22k / 999.9" />
+            </div>
+            <div class="admin-form-group">
+              <label>Peso (gramos)</label>
+              <input type="text" id="a-weight" class="admin-input" placeholder="27.06g" />
+            </div>
+            <div class="admin-form-group">
+              <label>Ceca (Marca de Ceca)</label>
+              <input type="text" id="a-mint" class="admin-input" placeholder="Madrid / Potosí" />
+            </div>
+            <div class="admin-form-group">
+              <label>Estado de Conservación</label>
+              <input type="text" id="a-condition" class="admin-input" placeholder="EBC+ / SC- / BC" value="EBC" />
+            </div>
+            <div class="admin-form-group">
+              <label>Precio de Venta (€)</label>
+              <input type="number" id="a-price" class="admin-input" placeholder="2400" required />
+            </div>
+          </div>
+
+          <div class="form-section-title">Multimedia y Venta</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group full">
+              <label>URLs de Imágenes (Anverso, Reverso - Separadas por coma)</label>
+              <div style="display: flex; gap: 15px;">
+                <input type="text" id="a-images" class="admin-input" placeholder="Imagenes/coin1.jpg, Imagenes/coin1-rev.jpg" required style="flex: 1;" />
+                <div id="admin-img-preview" style="width: 50px; height: 50px; border: 1px solid var(--glass-border); border-radius: 4px; overflow: hidden; background: #000;">
+                  <img src="" style="width: 100%; height: 100%; object-fit: cover; display: none;" id="a-preview-img">
+                </div>
+              </div>
+            </div>
+            <div class="admin-form-group full">
+              <label>Descripción Histórica / Notas</label>
+              <textarea id="a-description" class="admin-textarea" rows="4" placeholder="Detalles sobre la rareza, procedencia o context histórico..."></textarea>
+            </div>
+          </div>
+
+          <div class="admin-actions">
+            <button type="button" class="btn-admin code" id="btn-gen-code">Generar JSON</button>
+            <button type="submit" class="btn-admin save">
+              <span>🚀</span> Publicar Localmente
+            </button>
+          </div>
+        </form>
+
+        <div class="code-output-area" id="code-output"></div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Gatillo invisible (triple clic en logo también funcionará) -->
+  <div class="admin-login-trigger" id="admin-trigger"></div>
+
+  <script src="admin.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
