@@ -1,29 +1,23 @@
 /**
- * ═══════════════════════════════ ADMIN PANEL LOGIC (AUTO-LINK VERSION) ═════════════════ 
- * Enhanced with IndexedDB handle persistence for easier "fixed" file linkage.
+ * ═══════════════════════════════ ADMIN PANEL LOGIC (SUPABASE CLOUD) ═════════════════ 
+ * Fully automated cloud database integration for GitHub Pages hosting.
  */
 
 class AdminPanel {
     constructor(appInstance) {
         this.app = appInstance;
         this.password = "Alexander2026"; 
-        this.addedCoins = JSON.parse(localStorage.getItem('admin_added_coins')) || [];
         this.editingId = null;
-        this.fileHandle = null; 
 
         this.init();
     }
 
-    async init() {
+    init() {
         this.setupTriggers();
         this.setupModals();
         this.setupForm();
-        this.renderAddedList();
+        this.renderAddedList(); 
         this.setupImagePreview();
-        this.setupClearSession();
-        
-        // Attempt to restore file handle from previous session
-        await this.restoreFileHandle();
     }
 
     setupTriggers() {
@@ -60,113 +54,39 @@ class AdminPanel {
             if (e.key === 'Enter') this.handleLogin();
         };
 
-        const btnExport = document.getElementById('btn-export-db');
-        btnExport.innerHTML = '<span>🔗</span> Vincular data.json';
-        btnExport.onclick = () => this.linkFile();
+        // Migration/Setup button
+        const btnSync = document.getElementById('btn-export-db');
+        btnSync.innerHTML = '<span>☁️</span> Migrar Datos a la Nube';
+        btnSync.onclick = () => this.migrateData();
+
+        // Clear local button
+        document.getElementById('btn-clear-admin').onclick = () => {
+            this.app.showToast('ℹ️ El historial ahora reside en Supabase Cloud');
+        };
     }
 
-    async restoreFileHandle() {
-        try {
-            // Check if we have a saved handle in IndexedDB
-            const handle = await this.getHandleFromIDB();
-            if (handle) {
-                // Check if we still have permission
-                if (await handle.queryPermission({ mode: 'readwrite' }) === 'granted') {
-                    this.setFileHandle(handle);
-                } else {
-                    // We have the handle but need to re-ask for permission
-                    const btnExport = document.getElementById('btn-export-db');
-                    btnExport.innerHTML = '<span>🗝️</span> Reactivar data.json';
-                    btnExport.onclick = async () => {
-                        if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted') {
-                            this.setFileHandle(handle);
-                        }
-                    };
-                }
+    async migrateData() {
+        if (!confirm('¿Deseas subir todas las monedas actuales de data.js a Supabase? (Solo se subirán las que no existan)')) return;
+
+        this.app.showToast('🚀 Iniciando migración...');
+        let count = 0;
+        
+        // We assume COINS_DATA contains the initial hardcoded coins
+        for (const coin of window.COINS_DATA) {
+            try {
+                const { error } = await window.supabase
+                    .from('coins')
+                    .upsert(coin);
+                if (!error) count++;
+            } catch (err) {
+                console.error('Error migrando individual:', err);
             }
-        } catch (err) {
-            console.warn('Could not restore file handle:', err);
         }
+        
+        this.app.showToast(`✅ Migración completada: ${count} monedas sincronizadas.`);
+        this.renderAddedList();
     }
 
-    setFileHandle(handle) {
-        this.fileHandle = handle;
-        const btnExport = document.getElementById('btn-export-db');
-        btnExport.innerHTML = '<span>💾</span> Guardar en data.json';
-        btnExport.style.background = 'rgba(76, 175, 80, 0.2)';
-        btnExport.style.borderColor = '#4CAF50';
-        btnExport.onclick = () => this.saveToFile();
-        this.app.showToast('✅ data.json vinculado y listo');
-    }
-
-    async linkFile() {
-        try {
-            [this.fileHandle] = await window.showOpenFilePicker({
-                types: [{
-                    description: 'Archivo de datos JSON',
-                    accept: { 'application/json': ['.json'] },
-                }],
-            });
-            
-            // Save handle to IndexedDB for next time
-            await this.saveHandleToIDB(this.fileHandle);
-            this.setFileHandle(this.fileHandle);
-        } catch (err) {
-            console.error('Error selecting file:', err);
-        }
-    }
-
-    async saveToFile() {
-        if (!this.fileHandle) {
-            this.linkFile();
-            return;
-        }
-
-        try {
-            const writable = await this.fileHandle.createWritable();
-            const fullData = {
-                coins: window.COINS_DATA,
-                periods: window.PERIODS_INFO
-            };
-            await writable.write(JSON.stringify(fullData, null, 2));
-            await writable.close();
-            this.app.showToast('📁 Cambios guardados físicamente en data.json');
-        } catch (err) {
-            this.app.showToast('❌ Error al escribir en el archivo');
-            console.error(err);
-        }
-    }
-
-    // --- IndexedDB Helpers ---
-    async saveHandleToIDB(handle) {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open('AdminDB', 1);
-            request.onupgradeneeded = () => request.result.createObjectStore('handles');
-            request.onsuccess = () => {
-                const db = request.result;
-                const tx = db.transaction('handles', 'readwrite');
-                tx.objectStore('handles').put(handle, 'data_json');
-                tx.oncomplete = () => resolve();
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    async getHandleFromIDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open('AdminDB', 1);
-            request.onupgradeneeded = () => request.result.createObjectStore('handles');
-            request.onsuccess = () => {
-                const db = request.result;
-                const tx = db.transaction('handles', 'readonly');
-                const getReq = tx.objectStore('handles').get('data_json');
-                getReq.onsuccess = () => resolve(getReq.result);
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    // --- Rest of the logic ---
     showLogin() {
         document.getElementById('login-overlay').classList.add('active');
         document.getElementById('admin-password').focus();
@@ -193,7 +113,7 @@ class AdminPanel {
 
         form.onsubmit = async (e) => {
             e.preventDefault();
-            await this.saveCoin();
+            await this.saveCoinToCloud();
         };
 
         btnGenCode.onclick = () => {
@@ -201,9 +121,6 @@ class AdminPanel {
             const code = JSON.stringify(coin, null, 2);
             codeOutput.textContent = code;
             codeOutput.style.display = 'block';
-            navigator.clipboard.writeText(code).then(() => {
-                this.app.showToast('JSON copiado exitosamente');
-            });
         };
     }
 
@@ -226,82 +143,84 @@ class AdminPanel {
             price: parseFloat(document.getElementById('a-price').value),
             images: images,
             description: document.getElementById('a-description').value,
-            history: "Pieza catalogada profesionalmente para Numismática Alexander.",
+            history: "Pieza catalogada en Alexander Cloud.",
             featured: document.getElementById('a-period').value === 'bullion',
-            views: 0,
             stock: 1
         };
     }
 
-    async saveCoin() {
+    async saveCoinToCloud() {
         const coin = this.getFormData();
-        
-        if (this.editingId) {
-            const index = this.addedCoins.findIndex(c => c.id === this.editingId);
-            if (index !== -1) {
-                this.addedCoins[index] = coin;
-                const globalIndex = window.COINS_DATA.findIndex(c => c.id === this.editingId);
-                if (globalIndex !== -1) window.COINS_DATA[globalIndex] = coin;
-            }
+        this.app.showToast('⏳ Guardando en la nube...');
+
+        try {
+            const { error } = await window.supabase
+                .from('coins')
+                .upsert(coin);
+
+            if (error) throw error;
+
+            this.app.showToast('✨ ¡Moneda publicada con éxito!');
+            
+            // Refresh local data
+            const index = window.COINS_DATA.findIndex(c => c.id === coin.id);
+            if (index !== -1) window.COINS_DATA[index] = coin;
+            else window.COINS_DATA.push(coin);
+
             this.editingId = null;
-        } else {
-            this.addedCoins.push(coin);
-            window.COINS_DATA.push(coin);
+            document.getElementById('admin-coin-form').reset();
+            document.getElementById('a-preview-img').style.display = 'none';
+            this.renderAddedList();
+            
+            if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
+        } catch (err) {
+            console.error('Error guardando en Supabase:', err);
+            this.app.showToast('❌ Error al guardar en la nube');
         }
-
-        localStorage.setItem('admin_added_coins', JSON.stringify(this.addedCoins));
-        this.app.showToast('✅ Guardado en memoria');
-        
-        if (this.fileHandle) {
-            await this.saveToFile();
-        } else {
-            this.app.showToast('💡 Vincula el archivo para guardar permanentemente');
-        }
-
-        document.getElementById('admin-coin-form').reset();
-        document.getElementById('code-output').style.display = 'none';
-        document.getElementById('a-preview-img').style.display = 'none';
-        this.renderAddedList();
-        
-        if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
     }
 
-    renderAddedList() {
+    async renderAddedList() {
         const list = document.getElementById('admin-items-list');
         if (!list) return;
 
-        if (this.addedCoins.length === 0) {
-            list.innerHTML = '<p style="color: #444; font-size: 0.8rem; text-align: center; margin-top: 20px;">Sesión local vacía.</p>';
-            return;
-        }
+        // Fetch all from cloud for the list
+        try {
+            const { data: coins } = await window.supabase.from('coins').select('*').order('created_at', { ascending: false });
+            
+            if (!coins || coins.length === 0) {
+                list.innerHTML = '<p style="color: #444; font-size: 0.8rem; text-align: center; margin-top: 20px;">Nube vacía. Pulsa migrar para empezar.</p>';
+                return;
+            }
 
-        list.innerHTML = this.addedCoins.map(coin => `
-            <div class="added-item-card" data-id="${coin.id}">
-                <img src="${coin.images[0] || 'https://via.placeholder.com/50'}" class="added-item-img">
-                <div class="added-item-info">
-                    <h4>${coin.name}</h4>
-                    <p>${coin.year} • ${coin.price}€</p>
+            list.innerHTML = coins.map(coin => `
+                <div class="added-item-card" data-id="${coin.id}">
+                    <img src="${coin.images[0] || 'https://via.placeholder.com/50'}" class="added-item-img">
+                    <div class="added-item-info">
+                        <h4>${coin.name}</h4>
+                        <p>${coin.year} • ${coin.price}€</p>
+                    </div>
+                    <button class="delete-item" title="Eliminar">×</button>
                 </div>
-                <button class="delete-item" title="Eliminar">×</button>
-            </div>
-        `).join('');
+            `).join('');
 
-        list.querySelectorAll('.added-item-card').forEach(card => {
-            card.onclick = (e) => {
-                if (e.target.classList.contains('delete-item')) {
-                    this.deleteCoin(card.dataset.id);
-                    return;
-                }
-                this.loadCoinToForm(card.dataset.id);
-            };
-        });
+            list.querySelectorAll('.added-item-card').forEach(card => {
+                card.onclick = (e) => {
+                    if (e.target.classList.contains('delete-item')) {
+                        this.deleteCoinFromCloud(card.dataset.id);
+                        return;
+                    }
+                    this.loadCoinToFormFromData(coins.find(c => c.id === card.dataset.id));
+                };
+            });
+        } catch (err) {
+            list.innerHTML = '<p style="color: grey;">Error conectando a la nube.</p>';
+        }
     }
 
-    loadCoinToForm(id) {
-        const coin = this.addedCoins.find(c => c.id === id);
+    loadCoinToFormFromData(coin) {
         if (!coin) return;
 
-        this.editingId = id;
+        this.editingId = coin.id;
         document.getElementById('a-name').value = coin.name;
         document.getElementById('a-year').value = coin.year;
         document.getElementById('a-period').value = coin.period;
@@ -318,13 +237,24 @@ class AdminPanel {
         this.updatePreview(coin.images[0]);
     }
 
-    deleteCoin(id) {
-        if (!confirm('¿Eliminar esta moneda local?')) return;
-        this.addedCoins = this.addedCoins.filter(c => c.id !== id);
-        window.COINS_DATA = window.COINS_DATA.filter(c => c.id !== id);
-        localStorage.setItem('admin_added_coins', JSON.stringify(this.addedCoins));
-        this.renderAddedList();
-        if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
+    async deleteCoinFromCloud(id) {
+        if (!confirm('¿Eliminar esta moneda permanentemente de la nube?')) return;
+        
+        try {
+            const { error } = await window.supabase
+                .from('coins')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            
+            window.COINS_DATA = window.COINS_DATA.filter(c => c.id !== id);
+            this.renderAddedList();
+            this.app.showToast('✅ Eliminada de la nube');
+            if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
+        } catch (err) {
+            this.app.showToast('❌ Error al eliminar');
+        }
     }
 
     setupImagePreview() {
@@ -343,20 +273,5 @@ class AdminPanel {
         } else {
             preview.style.display = 'none';
         }
-    }
-
-    setupClearSession() {
-        const btn = document.getElementById('btn-clear-admin');
-        btn.onclick = () => {
-            if (confirm('¿Vaciar sesión local?')) {
-                this.addedCoins.forEach(coin => {
-                    window.COINS_DATA = window.COINS_DATA.filter(c => c.id !== coin.id);
-                });
-                this.addedCoins = [];
-                localStorage.removeItem('admin_added_coins');
-                this.renderAddedList();
-                if (this.app.currentSection === 'catalogo') this.app.renderCatalog();
-            }
-        };
     }
 }

@@ -36,18 +36,36 @@ class NumismaticaApp {
     }
 
     async init() {
-        // Load data from JSON
+        // Supabase configuration
+        const SB_URL = "https://krzigbuwlckknmryavmh.supabase.co";
+        const SB_KEY = "sb_publishable_SFh8-__5q4rZ74XtkjFUxA_sfuPCUKo";
+        window.supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        // Load data from Supabase
         try {
-            const response = await fetch('data.json');
-            const data = await response.json();
-            window.COINS_DATA = data.coins;
-            window.PERIODS_INFO = data.periods;
+            const { data: coins, error } = await window.supabase
+                .from('coins')
+                .select('*');
+            
+            if (error) throw error;
+            
+            window.COINS_DATA = coins;
+            // PERIODS_INFO comes from data.js or can be hardcoded here
+            if (typeof PERIODS_INFO === 'undefined') {
+                window.PERIODS_INFO = {
+                    "reyes-catolicos": { title: "Reyes Católicos", start: 1474, end: 1516, rulers: ["Fernando", "Isabel"] },
+                    "austrias": { title: "Dinastía de los Austrias", start: 1516, end: 1700, rulers: ["Carlos I", "Felipe II", "Felipe III", "Felipe IV", "Carlos II"] },
+                    "borbones": { title: "Casa de Borbón", start: 1700, end: 1931, rulers: ["Felipe V", "Carlos III", "Alfonso XII", "Alfonso XIII"] },
+                    "republica": { title: "República", start: 1931, end: 1939, rulers: ["I República", "II República"] },
+                    "extranjeras": { title: "Monedas Extranjeras", start: -500, end: 2024, rulers: ["Varios"] },
+                    "bullion": { title: "Inversión Bullion", start: 2000, end: 2025, rulers: ["Metales Preciosos"] }
+                };
+            }
         } catch (error) {
-            console.error('Error loading data.json:', error);
-            // Fallback to data.js if already loaded via script tag
+            console.error('Error loading Supabase:', error);
+            // Fallback load if needed
             if (typeof COINS_DATA === 'undefined') {
                 window.COINS_DATA = [];
-                window.PERIODS_INFO = {};
             }
         }
 
