@@ -1,4 +1,5 @@
-var COINS_DATA = [
+
+const coins = [
   {
     id: "moneda-1-habsburgo",
     name: "8 Escudos — Carlos II 'Hechizado'",
@@ -13,10 +14,7 @@ var COINS_DATA = [
     condition: "EBC",
     price: 220,
     images: ["Imagenes/8 escudos carlos II/photo_5794044606570761712_y (1).jpg", "Imagenes/8 escudos carlos II/photo_5929388376211524969_y.jpg"],
-    description: "Impresionante pieza de 8 escudos acuñada en Madrid durante el reinado del último de los Austrias. Estas monedas, conocidas como 'onzas', representan el máximo exponente de la numismática de oro española. El ejemplar presenta una acuñación centrada y un brillo residual excepcional para el tipo.",
-    history: "El reinado de Carlos II marcó el fin de la dinastía Habsburgo en España. A pesar de la crisis política, la ceca de Madrid produjo algunas de las piezas de oro más potentes de Europa. Los 8 escudos eran piezas de alto prestigio utilizadas principalmente en el comercio internacional y transacciones de corona.",
-    variants: "Existen variantes en el escudo del reverso y en la abreviatura de la leyenda. La variante con marca de ensayador 'G' es especialmente valorada.",
-    market: "En los últimos 5 años, las piezas de alta conservación de Carlos II han subido un 25% en valor de mercado debido a la escasez de ejemplares EBC+",
+    description: "Impresionante pieza de 8 escudos acuñada en Madrid.",
     featured: true,
     views: 1240,
     stock: 5
@@ -35,8 +33,7 @@ var COINS_DATA = [
     condition: "BC+",
     price: 890,
     images: ["https://picsum.photos/804/804", "https://picsum.photos/804/805"],
-    description: "Impresionante moneda de gran módulo del Imperio Romano que muestra el busto laurelado del emperador Adriano, uno de los 'cinco emperadores buenos'.",
-    history: "Adriano fue conocido por sus constantes viajes por el imperio y su labor administrativa y arquitectónica. Sus monedas a menudo conmemoran sus visitas a las provincias.",
+    description: "Impresionante moneda de gran módulo del Imperio Romano.",
     featured: true,
     views: 720,
     stock: 0
@@ -55,8 +52,7 @@ var COINS_DATA = [
     condition: "SC",
     price: 950,
     images: ["Imagenes/Lingote plata/1.png", "Imagenes/Lingote plata/2.png"],
-    description: "Lingote de plata de inversión de alta pureza (.999). Una pieza fundamental para la preservación de patrimonio con el sello de calidad de Numismática Alexander.",
-    history: "Los lingotes de plata han sido durante siglos la base del comercio y el ahorro. En la actualidad, representan una de las formas más seguras y líquidas de inversión en metales preciosos.",
+    description: "Lingote de plata de inversión de alta pureza.",
     featured: true,
     views: 450,
     stock: 0
@@ -76,8 +72,7 @@ var COINS_DATA = [
     condition: "EBC",
     price: 65,
     images: ["Imagenes/dolar morgan/Capa 2.png", "Imagenes/dolar morgan/Capa 1.png"],
-    description: "El dólar Morgan es una de las monedas más coleccionadas del mundo. Diseñada por George T. Morgan, muestra el perfil de la Libertad en el anverso y un águila calva en el reverso.",
-    history: "Acuñada entre 1878 y 1904, y luego brevemente en 1921. Esta moneda simboliza la expansión económica de los Estados Unidos a finales del siglo XIX y es el pilar de la numismática estadounidense.",
+    description: "El dólar Morgan es una de las monedas más coleccionadas del mundo.",
     featured: true,
     views: 850,
     stock: 3
@@ -96,8 +91,7 @@ var COINS_DATA = [
     condition: "EBC",
     price: 365,
     images: ["Imagenes/20 Francos leopordo/Capa 1.png", "Imagenes/20 Francos leopordo/Capa 2.png"],
-    description: "Moneda de 20 francos belgas de Leopoldo II. Estas piezas son icónicas en la historia monetaria europea y son altamente valoradas por su contenido en oro fino (.1867 oz).",
-    history: "Acuñada durante el reinado de Leopoldo II en Bélgica, estas monedas formaron parte de la Unión Monetaria Latina, estableciendo un estándar de pureza y peso equivalente al franco francés.",
+    description: "Moneda de 20 francos belgas de Leopoldo II.",
     featured: true,
     views: 320,
     stock: 1
@@ -116,8 +110,7 @@ var COINS_DATA = [
     condition: "SC",
     price: 450,
     images: ["Imagenes/20 francos elisabert/1.png", "Imagenes/20 francos elisabert/2.png"],
-    description: "Edición conmemorativa de 20 francos con la efigie de Elizabeth II. Una pieza de oro de inversión que sigue los estándares de la Unión Monetaria Latina.",
-    history: "Esta pieza representa una emisión especial que mantiene el peso y ley tradicionales de los 20 francos (Napoleones), pero con la efigie de la monarca británica, siendo muy apreciada por inversores en oro físico.",
+    description: "Edición conmemorativa de 20 francos con la efigie de Elizabeth II.",
     featured: true,
     views: 180,
     stock: 2
@@ -217,7 +210,7 @@ var COINS_DATA = [
     condition: "S/C",
     price: 70,
     images: [],
-    description: "Plaza mayor \"USO 50th S/C\"",
+    description: "Plaza mayor",
     featured: false,
     views: 0,
     stock: 1
@@ -442,7 +435,7 @@ var COINS_DATA = [
   }
 ];
 
-var PERIODS_INFO = {
+const periods = {
   "reyes-catolicos": { title: "Reyes Católicos", start: 1474, end: 1516, rulers: ["Fernando", "Isabel"] },
   "austrias": { title: "Dinastía de los Austrias", start: 1516, end: 1700, rulers: ["Carlos I", "Felipe II", "Felipe III", "Felipe IV", "Carlos II"] },
   "borbones": { title: "Casa de Borbón", start: 1700, end: 1931, rulers: ["Felipe V", "Carlos III", "Alfonso XII", "Alfonso XIII"] },
@@ -450,3 +443,6 @@ var PERIODS_INFO = {
   "extranjeras": { title: "Monedas Extranjeras", start: -500, end: 2024, rulers: ["Varios"] },
   "bullion": { title: "Inversión Bullion", start: 2000, end: 2025, rulers: ["Metales Preciosos"] }
 };
+
+const fs = require('fs');
+fs.writeFileSync('data.json', JSON.stringify({ coins, periods }, null, 2));
