@@ -1497,3 +1497,35 @@ option {
   text-align: center;
   text-transform: uppercase;
 }
+
+/* ═══════════════════════════════ TOAST NOTIFICATIONS ══════════════════════ */
+.toast-container {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  pointer-events: none;
+}
+
+.toast {
+  background: rgba(26, 26, 26, 0.95);
+  backdrop-filter: blur(10px);
+  border-left: 4px solid var(--primary);
+  color: var(--white);
+  padding: 16px 24px;
+  border-radius: 4px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  transform: translateX(120%);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  pointer-events: auto;
+}
+
+.toast.show {
+  transform: translateX(0);
+}

@@ -330,6 +330,8 @@ class NumismaticaApp {
             }
         });
 
+        this.setupContactForm();
+
         // Browser Back/Forward Support
         window.onpopstate = (e) => {
             if (e.state) {
@@ -406,4 +408,36 @@ class NumismaticaApp {
     }
 
     formatCurrency(v) { return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v); }
+
+    setupContactForm() {
+        const form = document.getElementById('contact-form');
+        if (!form) return;
+
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const subject = encodeURIComponent(`Consulta — Numismática Alexander`);
+            const body = encodeURIComponent(`Teléfono: ${data.phone}\nEmail: ${data.email}\n\nMensaje:\n${data.message}`);
+            
+            window.location.href = `mailto:Vreneli2024@gmail.com?subject=${subject}&body=${body}`;
+            
+            this.showToast('Abriendo gestor de correo...');
+        };
+    }
+
+    showToast(msg) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
 }
